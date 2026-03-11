@@ -281,7 +281,6 @@ function getRequiredHoursPerMonth(textFile, rateFile, bonusCount, driverID, mont
   const dID   = driverID.trim();
   const tgtMo = parseInt(month, 10);
 
-  // Look up the driver's day off
   let dayOff = null;
   for (const line of readLines(rateFile)) {
     const c = splitLine(line);
@@ -295,12 +294,11 @@ function getRequiredHoursPerMonth(textFile, rateFile, bonusCount, driverID, mont
     const dateStr = c[2];
     const mo = parseInt(dateStr.split("-")[1], 10);
     if (mo !== tgtMo) continue;
-    // Skip day-off days
+
     if (dayOff && weekdayOf(dateStr) === dayOff) continue;
     total += dailyQuota(dateStr);
   }
 
-  // Deduct 2 hours per bonus (floor at 0)
   total = Math.max(0, total - bonusCount * 2 * 3600);
   return secToDurStr(total);
 }
@@ -313,7 +311,6 @@ function getRequiredHoursPerMonth(textFile, rateFile, bonusCount, driverID, mont
 function getNetPay(driverID, actualHours, requiredHours, rateFile) {
   const dID = driverID.trim();
 
-  // Tier → allowed missing hours (no deduction within buffer)
   const TIER_ALLOWANCE = { 1: 50, 2: 20, 3: 10, 4: 3 };
 
   let basePay = 0;
@@ -326,19 +323,17 @@ function getNetPay(driverID, actualHours, requiredHours, rateFile) {
   const actualSec   = durStrToSec(actualHours);
   const requiredSec = durStrToSec(requiredHours);
 
-  // No deduction when actual ≥ required
   if (actualSec >= requiredSec) return basePay;
 
   const missingSec    = requiredSec - actualSec;
   const allowedSec    = (TIER_ALLOWANCE[tier] || 0) * 3600;
   const billableSec   = Math.max(0, missingSec - allowedSec);
-  const billableHours = Math.floor(billableSec / 3600);   // only full hours count
+  const billableHours = Math.floor(billableSec / 3600);  
 
   const deductionRate = Math.floor(basePay / 185);
   return basePay - billableHours * deductionRate;
 }
 
-// ══════════════════════════════════════════════════════════════
 module.exports = {
   getShiftDuration,
   getIdleTime,
